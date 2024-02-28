@@ -4,14 +4,12 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  Query,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
-import { isValidObjectId } from 'mongoose';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 
@@ -48,10 +46,23 @@ export class ProductsService {
 
     if (isUUID(term))
       product = await this.productRepository.findOneBy({ id: term });
-    else product = await this.productRepository.findOneBy({ slug: term });
+    else {
+      const queryBuilder = this.productRepository.createQueryBuilder();
+      product = await queryBuilder
+        /**
+         * El where del queryBuilder en teoría hace lo mismo que una query en DB:
+         * Select * from Products where slug='xxx' or title='xxx' */
+        .where('UPPER(title) =:title or slug =:slug', {
+          title: term.toUpperCase(),
+          slug: term,
+        })
+        .getOne();
+
+      // product = await this.productRepository.findOneBy({ slug: term });
+    }
 
     if (!product)
-      throw new NotFoundException(`Product with id or slug ${term} not found.`);
+      throw new NotFoundException(`Product with ${term} not found.`);
 
     return product;
   }
