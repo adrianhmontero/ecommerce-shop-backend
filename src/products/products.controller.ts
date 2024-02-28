@@ -12,7 +12,6 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id/parse-mongo-id.pipe';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('products')
@@ -30,7 +29,7 @@ export class ProductsController {
   }
 
   @Get(':term')
-  findOne(@Param('term', ParseUUIDPipe) term: string) {
+  findOne(@Param('term') term: string) {
     return this.productsService.findOne(term);
   }
 
