@@ -51,11 +51,17 @@ export class ProductsService {
 
   async findAll(paginationDto: PaginationDto) {
     const { limit = 10, offset = 0 } = paginationDto;
-    return this.productRepository.find({
+    const products = await this.productRepository.find({
       take: limit,
       skip: offset,
-      // TODO: relaciones
+      /* Con esta propiedad le estamos diciendo a TypeORM que me traiga todas las relaciones de imagen que tenga cada producto. */
+      relations: { images: true },
     });
+
+    return products.map((p) => ({
+      ...p,
+      images: p.images.map((img) => img.url),
+    }));
   }
 
   async findOne(term: string) {
@@ -64,7 +70,7 @@ export class ProductsService {
     if (isUUID(term))
       product = await this.productRepository.findOneBy({ id: term });
     else {
-      const queryBuilder = this.productRepository.createQueryBuilder();
+      const queryBuilder = this.productRepository.createQueryBuilder('product');
       product = await queryBuilder
         /**
          * El where del queryBuilder en teoría hace lo mismo que una query en DB:
@@ -73,6 +79,8 @@ export class ProductsService {
           title: term.toUpperCase(),
           slug: term,
         })
+        /* Una ventaja de usar leftJoinAndSelect es que devuelve un arreglo vacío si no encuentra ningún registro relacionado. */
+        .leftJoinAndSelect('product.images', 'productImage')
         .getOne();
 
       // product = await this.productRepository.findOneBy({ slug: term });
@@ -82,6 +90,14 @@ export class ProductsService {
       throw new NotFoundException(`Product with ${term} not found.`);
 
     return product;
+  }
+
+  async findOnePlain(term: string) {
+    const { images = [], ...product } = await this.findOne(term);
+    return {
+      ...product,
+      images: images.map((img) => img.url),
+    };
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {

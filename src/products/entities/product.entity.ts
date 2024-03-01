@@ -61,6 +61,8 @@ export class Product {
 
   @OneToMany(() => ProductImage, (productImage) => productImage.product, {
     cascade: true,
+    /* Lo que hace el eager es cargar todas las relaciones cuando ejecutemos un método find* */
+    eager: true,
   })
   images?: ProductImage[];
 
