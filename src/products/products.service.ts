@@ -167,23 +167,13 @@ export class ProductsService {
     );
   }
 
-  private handleExceptions(error: any, method: string = 'GET') {
-    const methods = {
-      PATCH: 'update',
-      GET: 'get',
-      POST: 'create',
-    };
-    /**
-     * Este código 11000 indica que ya existe un registro en DB que coincide con ese valor.  */
-    if (error.code === 11000)
-      throw new BadRequestException(
-        `Product exists in DB ${JSON.stringify(error.keyValue)}`,
-      );
-    /**
-     * Si no es error 11000, tenemos que revisar qué salió mal, y para indicar esto al frontend necesitamos usar el siguiente Exception Filter
-     */
-    throw new InternalServerErrorException(
-      `Can not ${methods[method]} Product - Check server logs`,
-    );
+  async deleteAllProducts() {
+    const query = this.productRepository.createQueryBuilder('product');
+
+    try {
+      return await query.delete().where({}).execute();
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 }
