@@ -8,7 +8,7 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 import { ProductImage, Product } from './entities';
@@ -22,6 +22,11 @@ export class ProductsService {
     // COn esto podemos crear instancias de ProductImage fácilmente
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
+
+    /* El Query Runner debe ser un objeto que conozca la cadena de conexión que estamos usando en la DB.
+    El DataSource sabe esa cadena de conexión y también sabe el usuario de la DB con el que estamos
+    autenticados. */
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -101,18 +106,48 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+    const { images, ...toUpdate } = updateProductDto;
+
     const product = await this.productRepository.preload({
       id,
-      ...updateProductDto,
-      images: [],
+      ...toUpdate,
     });
+
     if (!product)
       throw new NotFoundException(`Product with id ${id} not found`);
 
+    // Create Query Runner
+    /* El queryRunner no va a impactar la base de datos hasta que nosotros se lo indiquemos por medio de un commit. */
+    const queryRunner = this.dataSource.createQueryRunner();
+    // Nos conectamos a la DB para hacer transacciones.
+    await queryRunner.connect();
+    // Comenzamos la transacción
+    await queryRunner.startTransaction();
+
     try {
-      await this.productRepository.save(product);
-      return product;
+      if (images) {
+        /*  Esta linea dice que vamos a eliminar todas los registros de Product image que en product.id sean iguales al id recibido
+        en la petición */
+        await queryRunner.manager.delete(ProductImage, { product: { id } });
+        product.images = images.map((img) =>
+          this.productImageRepository.create({ url: img }),
+        );
+      } else {
+      }
+      // await this.productRepository.save(product);
+      /* Esta linea guarda el nuevo producto pero sin impactar la DB aún. */
+      await queryRunner.manager.save(product);
+      /* Si todo sale bien, la siguiente linea manda todas las transacciones generadas para que impacten la DB. */
+      await queryRunner.commitTransaction();
+      // Esta linea termina el queryRunner
+      await queryRunner.release();
+
+      return this.findOnePlain(id);
     } catch (error) {
+      /* Esta linea evita impactar la base de datos si algo falla. */
+      await queryRunner.rollbackTransaction();
+      // Esta linea termina el queryRunner
+      await queryRunner.release();
       this.handleDBExceptions(error);
     }
   }
