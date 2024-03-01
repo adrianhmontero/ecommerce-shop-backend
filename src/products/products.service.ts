@@ -8,10 +8,10 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { ProductImage, Product } from './entities';
 
 @Injectable()
 export class ProductsService {
@@ -19,14 +19,31 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    // COn esto podemos crear instancias de ProductImage fácilmente
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.productRepository.create(createProductDto);
+      const { images = [], ...productDetails } = createProductDto;
+      /**
+       * Lo siguiente es muy interesante: Nosotros estamos creando un producto donde estamos a su vez creando n instancias
+       * de imágenes (product-image). Cada instancia de imagen exige añadir la propiedad product. En este punto, nosotros apenas
+       * estamos creando el producto, así que como tal no podemos añadir el valor exacto de esa propiedad porque aún no existe
+       * nuestro producto en la DB, pero lo que pasa es que TypeORM infiere lo ya mencionado. Es decir, TyopeORM detecta que
+       * estamos creando instancias de imagenes dentro de la creación de un producto. Por lo tanto, cada instancia de imagen dentro
+       * de este producto tendrá relacionado dicho producto.
+       */
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map((img) =>
+          this.productImageRepository.create({ url: img }),
+        ),
+      });
       await this.productRepository.save(product);
 
-      return product;
+      return { ...product, images };
     } catch (error) {
       this.handleDBExceptions(error);
     }
@@ -71,6 +88,7 @@ export class ProductsService {
     const product = await this.productRepository.preload({
       id,
       ...updateProductDto,
+      images: [],
     });
     if (!product)
       throw new NotFoundException(`Product with id ${id} not found`);
