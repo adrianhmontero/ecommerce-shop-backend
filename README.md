@@ -10,9 +10,9 @@
 4. Cambiar las variables de entorno
 5. Levantar la DB
    `docker-compose up -d`
-6. Ejecutar SEED
+6. Levantar: `yarn start:dev`
+7. Ejecutar SEED
 ```
 http://localhost:3000/api/seed
 ```
 
-6. Levantar: `yarn start:dev`
