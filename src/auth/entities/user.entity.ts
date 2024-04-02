@@ -10,7 +10,10 @@ export class User {
   })
   email: string;
 
-  @Column('text')
+  @Column('text', {
+    // Select como falso significa que no va a devolvernos este valor en caso de consultar los registros de esta entidad.
+    select: false,
+  })
   password: string;
 
   @Column('text')
