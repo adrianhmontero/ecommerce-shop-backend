@@ -20,6 +20,6 @@ export class AuthController {
   @Get('privateRoute')
   @UseGuards(AuthGuard())
   testingPrivateRoute() {
-    return 'Hola mundo: OK';
+    return { message: 'Hola mundo: OK' };
   }
 }
