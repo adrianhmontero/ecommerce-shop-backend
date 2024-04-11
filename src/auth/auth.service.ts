@@ -59,6 +59,12 @@ export class AuthService {
     return token;
   }
 
+  async checkAuthStatus(user: User) {
+    delete user.roles;
+    delete user.isActive;
+    return { ...user, token: this.getJwtToken({ id: user.id }) };
+  }
+
   /* El "never" indica que esta función es de tipo never, lo que significa que nunca devolverá un valor de ningún tipo. */
   private handleDBErrors(error: any): never {
     if (error.code === '23505') throw new BadRequestException(error.detail);
