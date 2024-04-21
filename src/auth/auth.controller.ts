@@ -17,7 +17,7 @@ import { UserRoleGuard } from './guards/user-role/user-role.guard';
 import { RoleProtected } from './decorators/role-protected.decorator';
 import { ValidRoles } from './interfaces';
 import { Auth } from './decorators';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -36,12 +36,14 @@ export class AuthController {
 
   @Get('check-status')
   @Auth()
+  @ApiBearerAuth()
   checkAuthStatus(@GetUser() user: User) {
     return this.authService.checkAuthStatus(user);
   }
 
   // @SetMetadata('roles', ['admin', 'super-user'])
   @Get('privateRoute')
+  @ApiBearerAuth()
   @Auth(ValidRoles.superUser)
   @UseGuards(AuthGuard(), UserRoleGuard)
   testingPrivateRoute(

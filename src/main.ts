@@ -16,6 +16,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('eCommerce shop example RESTful API')
     .setDescription('eCommerce shop endpoints')
     .setVersion('1.0')
