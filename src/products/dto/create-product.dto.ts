@@ -12,7 +12,7 @@ import {
 
 export class CreateProductDto {
   @ApiProperty({
-    description: 'Product tile (unique)',
+    description: 'Product title (unique)',
     nullable: false,
     minLength: 1,
   })
