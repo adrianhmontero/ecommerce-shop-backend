@@ -52,6 +52,7 @@ export class Product {
     example: 'Do nulla sit cillum eu reprehenderit culpa.',
     description: 'Product description',
     default: null,
+    required: false,
   })
   @Column({
     type: 'text',
@@ -63,6 +64,7 @@ export class Product {
     example: 'ecommerce_t_shirt',
     description: 'Product slug (for SEO)',
     uniqueItems: true,
+    required: false,
   })
   @Column({
     unique: true,
@@ -74,6 +76,7 @@ export class Product {
     example: 10,
     description: 'Product stock',
     default: 0,
+    required: false,
   })
   @Column('int', {
     default: 0,
@@ -83,6 +86,7 @@ export class Product {
   @ApiProperty({
     example: ['M', 'XL', 'XXL'],
     description: 'Product sizes',
+    required: false,
   })
   @Column({ type: 'text', array: true })
   sizes: string[];
@@ -90,11 +94,14 @@ export class Product {
   @ApiProperty({
     example: 'men',
     description: 'Product gender',
+    required: false,
   })
   @Column('text')
   gender: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
   @Column({
     type: 'text',
     array: true,
@@ -102,7 +109,9 @@ export class Product {
   })
   tags: string[];
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
   @OneToMany(() => ProductImage, (productImage) => productImage.product, {
     cascade: true,
     /* Lo que hace el eager es cargar todas las relaciones cuando ejecutemos un método find* */
